@@ -24,4 +24,5 @@ status String @default("ACTIVE") // ACTIVE, INACTIVE, SUSPENDED
 createdAt DateTime @default(now())
 lastLogin DateTime? 
 privileges String[] @default([]) // ["CREATE_PRODUCT", "UPDATE_PRODUCT", "DELETE_PRODUCT", "VIEW_PRODUCT"]
+
 }
