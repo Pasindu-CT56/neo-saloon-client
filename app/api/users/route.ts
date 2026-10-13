@@ -20,31 +20,61 @@ export async function GET(request: NextRequest) {
         )
     }
 
-        const users = await prisma.user.findMany(
+    const pageNumberInString = request.nextUrl.searchParams.get("pageNumber")||"1"
+
+    const pageSizeInString = request.nextUrl.searchParams.get("pageSize")||"10"
+
+    const pageNumber = parseInt(pageNumberInString) 
+
+    const pageSize = parseInt(pageSizeInString) 
+
+    const userCount = await prisma.user.count()
+
+    const totalPages = Math.ceil(userCount/pageSize)
+
+    if (pageNumber > totalPages) {
+        return NextResponse.json(
             {
-                select : {
-                    id : true,
-                    email : true,
-                    phone : true,
-                    firstName : true,
-                    lastName : true,
-                    password : false,
-                    role : true,
-                    status : true,
-                    createdAt : true,
-                    lastLogin : true,
-                    privileges : true,
-                
+                message : "Page number exceeds total pages",
+                totalPages : totalPages
+            },
+            {
+                status : 400
             }
+        )
+    }
+
+    const users = await prisma.user.findMany({
+        skip: (pageNumber - 1) * pageSize,
+        take: pageSize,
+        select : {
+            id : true,
+            email : true,
+            phone : true,
+            firstName : true,
+            lastName : true,
+            password : false,
+            role : true,
+            status : true,
+            createdAt : true,
+            lastLogin : true,
+            privileges : true,
 
         }
+    })
 
-        )
 
-        return NextResponse.json(
+
+    return NextResponse.json(
         {
             message : "Users fetched successfully",
-            users : users
+            users : users,
+            pagination : {
+                pageNumber : pageNumber,
+                pageSize : pageSize,
+                totalPages : totalPages,
+                totalCount : userCount
+            }
         }
     )
 }
@@ -156,13 +186,116 @@ export async function PUT(request: NextRequest) {
         )
     }
 
+    const body =  await request.json();
+
     if(requestedUser.id == id){
-        // User is trying to update their own account. Allow it.
+
+        // never allow users to update their own role, status, privileges
+
+        const user = await prisma.user.findUnique({
+            where : {
+                id : id
+            }
+        })
+
+        if(user==null){
+            return NextResponse.json(
+                {
+                message : "User not found"
+                },
+                {
+                    status : 404
+                }
+            )
+        }
+
+        await prisma.user.update({
+
+            where : {
+                id : id
+            },
+            data : {
+
+                email : body.email || user.email,
+                firstName : body.firstName || user.firstName,
+                lastName : body.lastName || user.lastName,
+                phone : body.phone || user.phone,
+                profileImage : body.profileImage || user.profileImage,
+            }
+        })
+
+        return NextResponse.json(
+            {
+                message : "User updated successfully"
+            },
+            {
+                status : 200
+            }
+
+        )
+        
     }else{
+
         // User is trying to update someone else's account. Check if they have the privilege.
+
+        const havePrivilege = await isPrivileged(request, "users:edit")
+
+        if(!havePrivilege){
+
+            return NextResponse.json(
+                {
+                message : "You do not have the privilege to access this resource"
+                },
+                {
+                    status : 403
+                }
+            )
+        }
+
+        const user = await prisma.user.findUnique({
+            where : {
+                id : id||"000000"
+            }
+        })
+
+        if(user==null){
+            return NextResponse.json(
+                {
+                message : "User not found"
+                },
+                {
+                    status : 404
+                }
+            )
+        }
+
+        await prisma.user.update({
+
+            where : {
+                id : id||"000000"
+            },
+            data : {
+                email : body.email || user.email,
+                firstName : body.firstName || user.firstName,
+                lastName : body.lastName || user.lastName,
+                phone : body.phone || user.phone,
+                profileImage : body.profileImage || user.profileImage,
+                role : body.role || user.role,
+                status : body.status || user.status,
+                privileges : body.privileges || user.privileges
+            }
+        })
+
+        return NextResponse.json(
+            {
+                message : "User updated successfully"
+            },
+            {
+                status : 200
+            }
+
+        )
+
     }
-
-
-
     
 }

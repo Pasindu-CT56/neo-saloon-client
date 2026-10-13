@@ -23,6 +23,6 @@ role String @default("CUSTOMER")
 status String @default("ACTIVE") // ACTIVE, INACTIVE, SUSPENDED
 createdAt DateTime @default(now())
 lastLogin DateTime? 
-privileges String[] @default([]) // ["CREATE_PRODUCT", "UPDATE_PRODUCT", "DELETE_PRODUCT", "VIEW_PRODUCT"]
-
+privileges String[] @default([]) // ["user:read", "user:edit", "user:add", "user:delete"]
+profileImage String @default("/images/default-profile.png")
 }
