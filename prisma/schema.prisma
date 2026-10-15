@@ -26,3 +26,37 @@ lastLogin DateTime?
 privileges String[] @default([]) // ["user:read", "user:edit", "user:add", "user:delete"]
 profileImage String @default("/images/default-profile.png")
 }
+
+enum ProductStatus {
+  ACTIVE
+  INACTIVE
+  DELETED
+}
+
+model Product {
+  id String @id @default(uuid())
+  sku String @unique
+  name String
+  altNames String[] @default([])
+  description String
+  stock Int @default(0)
+  status ProductStatus @default(ACTIVE)
+  price Float
+  compareAT Float?
+  brand String?
+  model String?
+  media Media[]
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+}
+
+model Media {
+  id String @id @default(uuid())
+  url String
+  type MediaType
+  productId String
+  product Product @relation(fields: [productId], references: [id])
+}
