@@ -42,7 +42,7 @@ model Product {
   stock Int @default(0)
   status ProductStatus @default(ACTIVE)
   price Float
-  compareAT Float?
+  compareAt Float?
   brand String?
   model String?
   media Media[]
